@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minesweeper AI</title>
+  <!-- Digital font for counters -->
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: #008080 url('https://wallpapercave.com/wp/wp2465927.jpg'); /* XP Bliss style */
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      font-family: Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .window {
+      margin-top: 60px;
+      background: #c0c0c0;
+      border: 2px solid #808080;
+      border-radius: 6px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+      width: max-content;
+      min-width: 320px;
+      user-select: none;
+    }
+    .menu-bar {
+      background: #000080;
+      color: #fff;
+      font-size: 15px;
+      padding: 2px 8px;
+      border-top-left-radius: 4px;
+      border-top-right-radius: 4px;
+      display: flex;
+      align-items: center;
+      height: 22px;
+      font-family: Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .menu-bar span {
+      margin-right: 16px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .title-bar {
+      background: #e0e0e0;
+      color: #000;
+      font-size: 14px;
+      padding: 2px 8px;
+      border-bottom: 1px solid #808080;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 22px;
+      font-family: Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .info-panel {
+      background: #bdbdbd;
+      border: 2px inset #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px 8px 12px;
+      margin: 8px 8px 0 8px;
+      border-radius: 4px;
+    }
+    .counter, .timer {
+      background: #000;
+      color: #ff0000;
+      font-family: 'Share Tech Mono', 'Courier New', Courier, monospace;
+      font-size: 28px;
+      width: 48px;
+      text-align: right;
+      padding: 2px 6px;
+      border-radius: 4px;
+      letter-spacing: 2px;
+      box-shadow: inset 0 1px 2px #222;
+      border: 2px inset #333;
+      margin: 0 8px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    .smiley-btn {
+      width: 38px;
+      height: 38px;
+      background: #e0e0e0;
+      border: 2px outset #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      cursor: pointer;
+      margin: 0 8px;
+      box-shadow: 0 1px 2px #888;
+      transition: border 0.1s;
+    }
+    .smiley-btn:active {
+      border: 2px inset #888;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(9, 28px);
+      grid-template-rows: repeat(9, 28px);
+      gap: 0;
+      padding: 0;
+      background: #808080;
+      border: 3px outset #fff;
+      border-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      width: 252px; /* 9 * 28px */
+      height: 252px; /* 9 * 28px */
+      margin: 12px auto 8px auto;
+    }
+    .cell {
+      width: 28px;
+      height: 28px;
+      background: #c0c0c0;
+      border: 2px solid #fff;
+      border-bottom: 2px solid #808080;
+      border-right: 2px solid #808080;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+      box-sizing: border-box; /* Ensure borders are included in size */
+      transition: background 0.1s, color 0.1s;
+      position: relative;
+    }
+    .cell.revealed {
+      background: #e0e0e0;
+      border: 2px solid #bdbdbd;
+      cursor: default;
+    }
+    .cell.mine {
+      background: #e0e0e0;
+      color: #d32f2f;
+    }
+    .cell.flag {
+      background: #e0e0e0;
+      color: #1976d2;
+    }
+    .cell .mine-icon {
+      font-size: 18px;
+    }
+    .cell .ai-icon {
+      font-size: 15px;
+      color: #fbc02d;
+      position: absolute;
+      right: 2px;
+      bottom: 2px;
+    }
+    .cell1 { color: #1976d2; }
+    .cell2 { color: #388e3c; }
+    .cell3 { color: #d32f2f; }
+    .cell4 { color: #7b1fa2; }
+    .cell5 { color: #c2185b; }
+    .cell6 { color: #00796b; }
+    .cell7 { color: #455a64; }
+    .cell8 { color: #fbc02d; }
+    .set-mines-btn {
+      margin: 0 0 12px 0;
+      padding: 6px 18px;
+      font-size: 16px;
+      border: 2px outset #fff;
+      border-radius: 4px;
+      background: #e0e0e0;
+      color: #222;
+      cursor: pointer;
+      font-family: Tahoma, Geneva, Verdana, sans-serif;
+      box-shadow: 0 1px 2px #888;
+      transition: border 0.1s;
+    }
+    .set-mines-btn:active {
+      border: 2px inset #888;
+    }
+    .info {
+      text-align: center;
+      font-size: 15px;
+      color: #222;
+      margin-bottom: 8px;
+      min-height: 18px;
+    }
+    @media (max-width: 600px) {
+      .window { margin-top: 10px; }
+      .board { grid-template-columns: repeat(9, 22px); grid-template-rows: repeat(9, 22px); }
+      .cell { width: 22px; height: 22px; font-size: 13px; }
+      .smiley-btn { width: 28px; height: 28px; font-size: 18px; }
+      .counter, .timer { font-size: 18px; width: 32px; height: 22px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="window">
+    <div class="menu-bar">
+      <span>Game</span>
+      <span>Help</span>
+    </div>
+    <div class="title-bar">
+      <span>Minesweeper</span>
+      <span style="font-size:12px; color:#888;">&#9632;</span>
+    </div>
+    <div class="info-panel">
+      <div class="counter" id="mineCounter">010</div>
+      <div class="smiley-btn" id="smileyBtn">😊</div>
+      <div class="timer" id="timerCounter">000</div>
+    </div>
+    <div class="info" id="info">Click cells to place mines, then click 'Set Mines'!</div>
+    <div class="board" id="board"></div>
+    <div style="display:flex; justify-content:center;">
+      <button class="set-mines-btn" id="setMinesBtn">Set Mines</button>
+    </div>
+  </div>
+  <script>
+    const SIZE = 9;
+    const DEFAULT_MINES = 10;
+    const boardEl = document.getElementById('board');
+    const infoEl = document.getElementById('info');
+    const setMinesBtn = document.getElementById('setMinesBtn');
+    const smileyBtn = document.getElementById('smileyBtn');
+    const mineCounter = document.getElementById('mineCounter');
+    const timerCounter = document.getElementById('timerCounter');
+
+    let mode = 'place'; // 'place', 'solve', 'solving', 'done'
+    let board = [];
+    let revealed = [];
+    let flagged = [];
+    let aiPath = [];
+    let mineCount = 0;
+    let timer = 0;
+    let timerInterval = null;
+    let startTime = null;
+
+    function initBoard() {
+      board = Array.from({length: SIZE}, () => Array(SIZE).fill(0));
+      revealed = Array.from({length: SIZE}, () => Array(SIZE).fill(false));
+      flagged = Array.from({length: SIZE}, () => Array(SIZE).fill(false));
+      aiPath = [];
+      mineCount = 0;
+      timer = 0;
+      updateMineCounter();
+      updateTimer();
+      clearInterval(timerInterval);
+      timerInterval = null;
+      startTime = null;
+    }
+
+    function renderBoard() {
+      boardEl.innerHTML = '';
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+
+          if (revealed[r][c]) {
+            cell.classList.add('revealed');
+            if (board[r][c] === 'M') {
+              cell.classList.add('mine');
+              cell.innerHTML = '<span class="mine-icon">💣</span>';
+            } else if (board[r][c] > 0) {
+              cell.textContent = board[r][c];
+              cell.classList.add('cell' + board[r][c]);
+            }
+          } else if (flagged[r][c]) {
+            cell.classList.add('flag');
+            cell.innerHTML = '🚩';
+          } else if (board[r][c] === 'M' && mode === 'place') {
+            cell.classList.add('mine');
+            cell.innerHTML = '<span class="mine-icon">💣</span>';
+          }
+
+          if (aiPath.some(([rr, cc]) => rr === r && cc === c)) {
+            cell.innerHTML += '<span class="ai-icon">🤖</span>';
+          }
+
+          cell.addEventListener('click', onCellClick);
+          cell.addEventListener('contextmenu', onCellRightClick);
+          boardEl.appendChild(cell);
+        }
+      }
+    }
+
+    function onCellClick(e) {
+      if (mode === 'solving' || mode === 'done') return;
+      const r = +e.currentTarget.dataset.row;
+      const c = +e.currentTarget.dataset.col;
+      if (mode === 'place') {
+        if (board[r][c] === 'M') {
+          board[r][c] = 0;
+          mineCount--;
+        } else if (mineCount < 99) {
+          board[r][c] = 'M';
+          mineCount++;
+        }
+        updateMineCounter();
+        renderBoard();
+        // Change button text based on mine count
+        if (mineCount > 0) {
+          setMinesBtn.textContent = 'Make AI Solve';
+        } else {
+          setMinesBtn.textContent = 'Set Mines';
+        }
+      }
+    }
+
+    function onCellRightClick(e) {
+      e.preventDefault();
+      if (mode !== 'solve') return;
+      const r = +e.currentTarget.dataset.row;
+      const c = +e.currentTarget.dataset.col;
+      if (!revealed[r][c]) {
+        flagged[r][c] = !flagged[r][c];
+        updateMineCounter();
+        renderBoard();
+      }
+    }
+
+    function countAdjacentMines(r, c) {
+      let count = 0;
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          if (dr === 0 && dc === 0) continue;
+          const nr = r + dr, nc = c + dc;
+          if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE) {
+            if (board[nr][nc] === 'M') count++;
+          }
+        }
+      }
+      return count;
+    }
+
+    function fillNumbers() {
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          if (board[r][c] !== 'M') {
+            board[r][c] = countAdjacentMines(r, c);
+          }
+        }
+      }
+    }
+
+    function updateMineCounter() {
+      let mines = 0;
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          if (board[r][c] === 'M') mines++;
+        }
+      }
+      let flags = 0;
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          if (flagged[r][c]) flags++;
+        }
+      }
+      mineCounter.textContent = (mines - flags).toString().padStart(3, '0');
+    }
+
+    function updateTimer() {
+      timerCounter.textContent = timer.toString().padStart(3, '0');
+    }
+
+    function startTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      startTime = Date.now();
+      timerInterval = setInterval(() => {
+        timer = Math.floor((Date.now() - startTime) / 1000);
+        updateTimer();
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+
+    setMinesBtn.addEventListener('click', () => {
+      if (mode === 'place') {
+        fillNumbers();
+        setMode('solve');
+        infoEl.textContent = "AI is solving...";
+        smileyBtn.textContent = '😐';
+        startTimer();
+        setMinesBtn.style.display = 'none';
+        setTimeout(aiSolveWholeBoard, 400);
+      }
+    });
+
+    smileyBtn.addEventListener('click', () => {
+      resetGame();
+    });
+
+    function setMode(newMode) {
+      mode = newMode;
+      renderBoard();
+    }
+
+    // Also show the button again on game reset
+    function resetGame() {
+      initBoard();
+      setMode('place');
+      infoEl.textContent = "Click cells to place mines, then click 'Set Mines'!";
+      smileyBtn.textContent = '😊';
+      setMinesBtn.textContent = 'Set Mines';
+      setMinesBtn.style.display = '';
+    }
+
+    // BFS reveal for all connected zero cells and their number neighbors
+    async function bfsReveal(startR, startC) {
+      const queue = [[startR, startC]];
+      const visited = Array.from({length: SIZE}, () => Array(SIZE).fill(false));
+      while (queue.length) {
+        const [r, c] = queue.shift();
+        if (visited[r][c] || revealed[r][c] || flagged[r][c]) continue;
+        visited[r][c] = true;
+        revealed[r][c] = true;
+        aiPath = [[r, c]];
+        renderBoard();
+        await sleep(60);
+        if (board[r][c] === 0) {
+          for (let dr = -1; dr <= 1; dr++) {
+            for (let dc = -1; dc <= 1; dc++) {
+              if (dr === 0 && dc === 0) continue;
+              let nr = r + dr, nc = c + dc;
+              if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE) {
+                if (!visited[nr][nc] && !flagged[nr][nc] && !revealed[nr][nc]) {
+                  queue.push([nr, nc]);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    async function aiSolveWholeBoard() {
+      setMode('solving');
+      let totalMines = 0;
+      for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) if (board[r][c] === 'M') totalMines++;
+      let totalSafe = SIZE * SIZE - totalMines;
+      let revealedCount = 0;
+      let changed = true;
+      let step = 0;
+      let flagCount = 0;
+      while (revealedCount < totalSafe && changed) {
+        changed = false;
+        // 1. Reveal all cells that are guaranteed safe
+        for (let r = 0; r < SIZE; r++) {
+          for (let c = 0; c < SIZE; c++) {
+            if (revealed[r][c] || board[r][c] === 'M') continue;
+            // If all adjacent mines are flagged, reveal
+            let adjFlags = 0, adjUnknown = [];
+            for (let dr = -1; dr <= 1; dr++) {
+              for (let dc = -1; dc <= 1; dc++) {
+                if (dr === 0 && dc === 0) continue;
+                let nr = r + dr, nc = c + dc;
+                if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE) {
+                  if (flagged[nr][nc]) adjFlags++;
+                  else if (!revealed[nr][nc] && board[nr][nc] !== 'M') adjUnknown.push([nr, nc]);
+                }
+              }
+            }
+            if (board[r][c] === adjFlags && !revealed[r][c]) {
+              if (board[r][c] === 0) {
+                await bfsReveal(r, c);
+              } else {
+                revealed[r][c] = true;
+                aiPath = [[r, c]];
+                renderBoard();
+                await sleep(80);
+              }
+              revealedCount = 0;
+              for (let rr = 0; rr < SIZE; rr++) for (let cc = 0; cc < SIZE; cc++) if (revealed[rr][cc]) revealedCount++;
+              changed = true;
+            }
+          }
+        }
+        // 2. Flag all cells that are guaranteed mines, but never flag more than totalMines
+        flagCount = 0;
+        for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) if (flagged[r][c]) flagCount++;
+        for (let r = 0; r < SIZE; r++) {
+          for (let c = 0; c < SIZE; c++) {
+            if (!revealed[r][c] || board[r][c] === 0) continue;
+            let adjFlags = 0, adjUnknown = [];
+            for (let dr = -1; dr <= 1; dr++) {
+              for (let dc = -1; dc <= 1; dc++) {
+                if (dr === 0 && dc === 0) continue;
+                let nr = r + dr, nc = c + dc;
+                if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE) {
+                  if (flagged[nr][nc]) adjFlags++;
+                  else if (!revealed[nr][nc] && board[nr][nc] !== 'M') adjUnknown.push([nr, nc]);
+                }
+              }
+            }
+            if (
+              adjUnknown.length > 0 &&
+              board[r][c] - adjFlags === adjUnknown.length &&
+              flagCount + adjUnknown.length <= totalMines
+            ) {
+              for (const [nr, nc] of adjUnknown) {
+                if (!flagged[nr][nc]) {
+                  flagged[nr][nc] = true;
+                  flagCount++;
+                  aiPath = [[nr, nc]];
+                  renderBoard();
+                  await sleep(80);
+                  changed = true;
+                }
+              }
+            }
+          }
+        }
+        step++;
+        if (!changed) {
+          // If stuck, pick a random unrevealed, unflagged cell
+          let candidates = [];
+          for (let r = 0; r < SIZE; r++) {
+            for (let c = 0; c < SIZE; c++) {
+              if (!revealed[r][c] && !flagged[r][c]) candidates.push([r, c]);
+            }
+          }
+          if (candidates.length > 0) {
+            let [rr, cc] = candidates[Math.floor(Math.random() * candidates.length)];
+            if (board[rr][cc] === 'M') {
+              flagged[rr][cc] = true;
+              flagCount++;
+              aiPath = [[rr, cc]];
+              renderBoard();
+              await sleep(120);
+              changed = true;
+            } else {
+              if (board[rr][cc] === 0) {
+                await bfsReveal(rr, cc);
+              } else {
+                revealed[rr][cc] = true;
+                aiPath = [[rr, cc]];
+                renderBoard();
+                await sleep(120);
+              }
+              changed = true;
+            }
+          }
+        } else {
+          // recount revealed
+          revealedCount = 0;
+          for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) if (revealed[r][c]) revealedCount++;
+        }
+      }
+      // Final pass: flag all remaining mines, reveal all remaining safe cells
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          if (!revealed[r][c] && board[r][c] === 'M') flagged[r][c] = true;
+          if (!revealed[r][c] && board[r][c] !== 'M') revealed[r][c] = true;
+        }
+      }
+      aiPath = [];
+      renderBoard();
+      stopTimer();
+      infoEl.textContent = 'AI finished! Board solved.';
+      smileyBtn.textContent = '😎';
+      setMode('done');
+    }
+
+    function sleep(ms) {
+      return new Promise(res => setTimeout(res, ms));
+    }
+
+    // Initialize
+    resetGame();
+  </script>
+</body>
+</html> 
