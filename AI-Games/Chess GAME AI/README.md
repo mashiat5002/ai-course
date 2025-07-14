@@ -18,7 +18,7 @@ A complete, well-automated chess game made with object-oriented JavaScript. Play
 - The game ends with checkmate.
 
 ## Screenshot
-![Game Screenshot](../public/Game%20Screenshot.png)
+![Game Screenshot](public/gamess.png)
 
 ## Algorithm Used
 - **Minimax Algorithm**: The AI uses a depth-limited minimax algorithm to evaluate possible moves and select the best one. It simulates future moves up to a certain depth, scoring board positions based on material and positional heuristics. The AI is designed to provide a challenging opponent.
